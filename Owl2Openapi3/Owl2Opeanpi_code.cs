@@ -548,7 +548,7 @@ namespace OwlToOpenApiFull
 
     #region FUNZIONI UTILI
     private string GetLiteral(IGraph g, INode subject, string localName)
-    {
+    { 
       var pred = g.CreateUriNode(UriFor(localName));
       var triple = g.GetTriplesWithSubjectPredicate(subject, pred).FirstOrDefault();
       if (triple != null && triple.Object is ILiteralNode ln)
