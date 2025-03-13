@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi;
 using Lucene.Net.Index;
+using System.Diagnostics;
 
 namespace OwlToOpenApi
 {
@@ -175,9 +176,10 @@ namespace OwlToOpenApi
         var headerClass = triple.Object;
         if (headerClass == null) continue;
         var fieldString = GetLiteralObject(headerClass, ":field_string");
-        var fieldBool = GetLiteralObject(headerClass, ":field_bool");
+        var fieldBool = GetLiteralObject(headerClass, ":field_bool");//unused
         var fieldInt = GetLiteralObject(headerClass, ":field_integer");
         var fieldReq = GetLiteralObject(headerClass, ":field_required");
+
         if (!string.IsNullOrEmpty(fieldString))
         {
           foreach (var token in fieldString.Split(','))
@@ -238,6 +240,7 @@ namespace OwlToOpenApi
 
     private void ParseResponsesForPath(INode pathNode, OpenApiOperation operation)
     {
+
       var hasResponse = GetUriNode(":hasResponse");
       var respTriples = _graph.GetTriplesWithSubjectPredicate(pathNode, hasResponse);
       bool found200 = false;
@@ -370,14 +373,42 @@ namespace OwlToOpenApi
         Required = new HashSet<string>()
       };
 
-      // (1) Campi semplici: "field_string" e "field_required"
+      // (1) Campi semplici: "field_string" e "field_required", field_bool and field_integer
       string fieldString = GetLiteralObject(sNode, ":field_string");
       string fieldRequired = GetLiteralObject(sNode, ":field_required");
+      var fieldBool = GetLiteralObject(sNode, ":field_bool");//unused
+      var fieldInt = GetLiteralObject(sNode, ":field_integer");
       if (!string.IsNullOrEmpty(fieldString))
       {
         foreach (var field in fieldString.Split(',').Select(f => f.Trim()).Where(f => !string.IsNullOrEmpty(f)))
         {
           schema.Properties[field] = new OpenApiSchema { Type = "string" };
+          if (!string.IsNullOrEmpty(fieldRequired))
+          {
+            var reqList = fieldRequired.Split(',').Select(r => r.Trim());
+            if (reqList.Contains(field))
+              schema.Required.Add(field);
+          }
+        }
+      }
+      if (!string.IsNullOrEmpty(fieldBool) )
+      {
+        foreach (var field in fieldBool.Split(',').Select(f => f.Trim()).Where(f => !string.IsNullOrEmpty(f)))
+        {
+          schema.Properties[field] = new OpenApiSchema { Type = "boolean" };
+          if (!string.IsNullOrEmpty(fieldRequired))
+          {
+            var reqList = fieldRequired.Split(',').Select(r => r.Trim());
+            if (reqList.Contains(field))
+              schema.Required.Add(field);
+          }
+        }
+      }
+      if (!string.IsNullOrEmpty(fieldInt))
+      {
+        foreach (var field in fieldInt.Split(',').Select(f => f.Trim()).Where(f => !string.IsNullOrEmpty(f)))
+        {
+          schema.Properties[field] = new OpenApiSchema { Type = "integer" };
           if (!string.IsNullOrEmpty(fieldRequired))
           {
             var reqList = fieldRequired.Split(',').Select(r => r.Trim());
